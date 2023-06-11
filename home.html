@@ -1,39 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
-<body>
-    <button onclick="notifyMe()">Notify me!</button>
-    <script>
-        // request permission on page load
-        document.addEventListener('DOMContentLoaded', function() {
-        if (!Notification) {
-        alert('Desktop notifications not available in your browser. Try Chromium.');
-        return;
-        }
+<div class="container">
+    <div>Notification data will receive here if the app is open, and focused</div>
+    <div class="message" style="min-height: 80px;"></div>
+    <div>Device Token:</div>
+</div>
 
-        if (Notification.permission !== 'granted')
-        Notification.requestPermission();
+<body>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging-compat.js"></script>
+    <script>
+       // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+        apiKey: "AIzaSyCvMNPktZwPggLwQt8OR8tIQi-yAmg_zpQ",
+        authDomain: "grocery-85704.firebaseapp.com",
+        projectId: "grocery-85704",
+        storageBucket: "grocery-85704.appspot.com",
+        messagingSenderId: "820020102436",
+        appId: "1:820020102436:web:98fbff6bc14a132e5d9fb1",
+        measurementId: "G-RXPXK70HFC"
+        };
+        const app = firebase.initializeApp(firebaseConfig)
+        const messaging = firebase.messaging();
+
+        messaging.getToken({ vapidKey: 'BJdBFcVTdDFCZ8JJKBaF0VJ2MqDoQ4Wcpjz1f8_ORQ04flXCnlXOuiZuMVaHdZZWjttE3dZ_NUa7qkS5AJfpDCc' }).then((currentToken) => {
+            // app token used for sending notifications
+            if (currentToken) {
+                console.log(currentToken);
+                document.querySelector('body').append(currentToken)
+                sendTokenToServer(currentToken)
+            }else{
+                setTokenSentToServer(false);
+            }
+        }).catch((err) => {
+            // notifications are manually blocked, you can ask for unblock here
+            console.log('An error occurred while retrieving token. ', err);
+            setTokenSentToServer(false);
         });
 
+        messaging.onMessage((payload) => {
+            // notification data receive here, use it however you want
+            // keep in mind if message receive here, it will not notify in background
+            console.log('Message received. ', payload);
+            const messagesElement = document.querySelector('.message');
+            const dataHeaderElement = document.createElement('h5');
+            const dataElement = document.createElement('pre');
+            dataElement.style = 'overflow-x:hidden;';
+            dataHeaderElement.textContent = 'Message Received:';
+            dataElement.textContent = JSON.stringify(payload, null, 2);
+            messagesElement.appendChild(dataHeaderElement);
+            messagesElement.appendChild(dataElement);
+        });
 
-        function notifyMe() {
-            if (Notification.permission !== 'granted')
-            Notification.requestPermission();
-            else {
-            var notification = new Notification('Notification title', {
-            icon: 'http://cdn.sstatic.net/stackexchange/img/logos/so/so-icon.png',
-            body: 'Hey there! You\'ve been notified!',
-            });
-            notification.onclick = function() {
-            window.open('http://stackoverflow.com/a/13328397/1269037');
-            };
+        function sendTokenToServer(currentToken) {
+            if (!isTokenSentToServer()) {
+                console.log('Sending token to server...');
+                // TODO(developer): Send the current token to your server.
+                setTokenSentToServer(true);
+            } else {
+                console.log('Token already available in the server');
             }
+        }
+
+        function isTokenSentToServer() {
+            return window.localStorage.getItem('sentToServer') === '1';
+        }
+
+        function setTokenSentToServer(sent) {
+            window.localStorage.setItem('sentToServer', sent ? '1' : '0');
         }
     </script>
 </body>
+
 </html>
